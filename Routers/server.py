@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from dotenv import load_dotenv
 import jwt
 import os
+from Infrastructure.CapacityChecker import CapacityChecker
 from Infrastructure.TokenBuilder import TokenBuilder
 from Infrastructure.UUIDGenerator import UUIDGenerator
 
@@ -12,13 +13,16 @@ from Models.PurchaseResponseModel import PurchaseResponseModel
 
 app = FastAPI()
 load_dotenv()
+
+# Get ENV variables
 PORT = os.getenv('PORT')
 SECRET = os.getenv('SECRET')
+CAPACITY_QUEUE_URL = os.getenv('CAPACITY_QUEUE_URL')
 
 @app.get("/purchase")
 async def main(request: PurchaseRequestModel) -> PurchaseResponseModel:
-    concert = request.concert
-    number_of_tickets = request.number_of_tickets
+    requested_concert = request.concert
+    requested_number_of_tickets = request.number_of_tickets
     transaction_id = request.transaction_id
     token = request.token
 
@@ -30,9 +34,11 @@ async def main(request: PurchaseRequestModel) -> PurchaseResponseModel:
             "success": "False"
         }
 
-    # Comprobar capacidad
-    # -> Error? Devolver mensaje de error
-    # raise HTTPException(status_code=400, detail="Requested event is full. There are no more tickets on sale")
+    # Actualizar capacidad en caso de ser posible
+    capacity_checker = CapacityChecker(CAPACITY_QUEUE_URL)
+    capacity_operation_success = capacity_checker.update_capacity(event=requested_concert, number_of_tickets=requested_number_of_tickets)
+    if not capacity_operation_success:
+        raise HTTPException(status_code=400, detail="Requested event is full. There are no more tickets on sale")
 
     # Guardar el ticket
     # -> Error? Devolver mensaje de error
