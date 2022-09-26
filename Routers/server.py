@@ -1,7 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from dotenv import load_dotenv
 import jwt
 import os
+from Infrastructure.TokenBuilder import TokenBuilder
+from Infrastructure.UUIDGenerator import UUIDGenerator
 
 from Models.AuthenticateRequestModel import AuthenticateRequestModel
 from Models.AuthenticateResponseModel import AuthenticateResponseModel
@@ -11,7 +13,7 @@ from Models.PurchaseResponseModel import PurchaseResponseModel
 app = FastAPI()
 load_dotenv()
 PORT = os.getenv('PORT')
-print(PORT)
+SECRET = os.getenv('SECRET')
 
 @app.get("/purchase")
 async def main(request: PurchaseRequestModel) -> PurchaseResponseModel:
@@ -21,14 +23,24 @@ async def main(request: PurchaseRequestModel) -> PurchaseResponseModel:
     token = request.token
 
     try:
-        jwt.decode(token)
-    except Exception:
+        jwt.decode(token, SECRET, algorithms=["HS256"])
+    except Exception as e:
         return {
-            "message": "Provided token was not valid", 
+            "message": e, 
             "success": "False"
         }
 
-    response:PurchaseResponseModel = PurchaseResponseModel(ticket_url="url", transaction_id="12345")
+    # Comprobar capacidad
+    # -> Error? Devolver mensaje de error
+    # raise HTTPException(status_code=400, detail="Requested event is full. There are no more tickets on sale")
+
+    # Guardar el ticket
+    # -> Error? Devolver mensaje de error
+    # raise HTTPException(status_code=500, detail="Could not store ticket in the AWS Repository")
+
+
+    # Enviar la URL en la respuesta
+    response:PurchaseResponseModel = PurchaseResponseModel(ticket_url="url", transaction_id=transaction_id)
     return response
 
 
@@ -44,7 +56,8 @@ async def authenticate(request: AuthenticateRequestModel) -> AuthenticateRespons
 
     # Si éxito, devolver token de sesión
     if True:
-        response:AuthenticateResponseModel = AuthenticateResponseModel(token="token", success=True)
+        new_token:str = TokenBuilder.new_token(SECRET)
+        response:AuthenticateResponseModel = AuthenticateResponseModel(token=new_token, success=True)
         return response
 
     response:AuthenticateResponseModel = AuthenticateResponseModel(token="", success=False)
