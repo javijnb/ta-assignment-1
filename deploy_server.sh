@@ -1,0 +1,1 @@
+uvicorn Routers.server:app --reload
