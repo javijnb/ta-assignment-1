@@ -1,12 +1,14 @@
 from fastapi import HTTPException
 
-from Infrastructure.SQSReader import SQSReader
-from Infrastructure.SQSWriter import SQSWriter
+from AWS.SQSReader import SQSReader
+from AWS.SQSWriter import SQSWriter
+from AWS.DynamoDBConnector import DynamoDBConnector
 
 class CapacityChecker:
 
-    def __init__(self, capacity_queue_url:str):
+    def __init__(self, capacity_queue_url:str, events_dynamodb_table_name:str):
         self.capacity_queue_url = capacity_queue_url
+        self.events_dynamodb_table_name = events_dynamodb_table_name
 
     def update_capacity(self, event: str, number_of_tickets: int) -> bool:
 
@@ -23,7 +25,7 @@ class CapacityChecker:
         # Get max capacity for the requested event
         max_capacity = self.get_max_capacity(event=event)
 
-        # CHeck if possible to purchase the amount of requested tickets
+        # Check if possible to purchase the amount of requested tickets
         if (number_of_tickets + current_capacity) > max_capacity:
             return False
 
@@ -34,7 +36,7 @@ class CapacityChecker:
 
         # Send updated message with SQSWriter
         sqs_writer = SQSWriter()
-        success = sqs_writer.write(queue_url=self.capacity_queue_url, message_body=message)
+        success = sqs_writer.write_message(queue_url=self.capacity_queue_url, message_body=message)
         if not success:
             raise HTTPException(status_code=400, detail="Unable to send message "+message+" to the SQS queue <"+self.capacity_queue_url+">")
 
@@ -47,4 +49,11 @@ class CapacityChecker:
     def get_max_capacity(self, event:str) -> int:
 
         # Get from DynamoDB repository max capacity for the requested event with SQSReader
-        print()
+        dynamodb_connector = DynamoDBConnector()
+        max_capacity = dynamodb_connector.get_item(
+            table_name= self.events_dynamodb_table_name,
+            key="event", 
+            type="S", 
+            value=event
+        )
+        return max_capacity
