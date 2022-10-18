@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from dotenv import load_dotenv
 import jwt
 import os
+
 from Infrastructure.CapacityChecker import CapacityChecker
 from Infrastructure.PDFManager import PDFManager
 from Infrastructure.TokenBuilder import TokenBuilder
@@ -18,10 +19,13 @@ load_dotenv()
 # Get ENV variables
 PORT = os.getenv('PORT')
 SECRET = os.getenv('SECRET')
+AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_ACCESS_SECRET_KEY = os.getenv('AWS_ACCESS_SECRET_KEY')
+AWS_REGION_NAME = os.getenv('AWS_REGION_NAME')
 CAPACITY_QUEUE_URL = os.getenv('CAPACITY_QUEUE_URL')
 USERS_TABLE_NAME = os.getenv('USERS_TABLE_NAME')
-TICKETS_TABLE_NAME = os.getenv('TICKETS_TABLE_NAME')
 EVENTS_TABLE_NAME = os.getenv('EVENTS_TABLE_NAME')
+S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
 
 @app.get("/purchase")
 async def main(request: PurchaseRequestModel) -> PurchaseResponseModel:
@@ -41,13 +45,13 @@ async def main(request: PurchaseRequestModel) -> PurchaseResponseModel:
         }
 
     # Actualizar capacidad en caso de ser posible
-    capacity_checker = CapacityChecker(CAPACITY_QUEUE_URL)
+    capacity_checker = CapacityChecker(CAPACITY_QUEUE_URL, EVENTS_TABLE_NAME, AWS_ACCESS_KEY, AWS_ACCESS_SECRET_KEY, AWS_REGION_NAME)
     capacity_operation_success = capacity_checker.update_capacity(event=requested_concert, number_of_tickets=requested_number_of_tickets)
     if not capacity_operation_success:
         raise HTTPException(status_code=400, detail="Requested event is full. There are no more tickets on sale")
 
     # Guardar el ticket
-    pdf_manager = PDFManager()
+    pdf_manager = PDFManager(AWS_ACCESS_KEY, AWS_ACCESS_SECRET_KEY, AWS_REGION_NAME, S3_BUCKET_NAME)
     try:
         ticket_url = pdf_manager.build_and_save_pdf(concert=requested_concert, number_of_tickets=requested_number_of_tickets, transaction_id=transaction_id, email=email)
     except Exception as e:
