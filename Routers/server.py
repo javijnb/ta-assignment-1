@@ -29,6 +29,8 @@ S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
 
 @app.get("/purchase")
 async def main(request: PurchaseRequestModel) -> PurchaseResponseModel:
+
+    #TODO: recoger respuesta de la cola
     requested_concert = request.concert
     requested_number_of_tickets = request.number_of_tickets
     transaction_id = request.transaction_id
@@ -60,11 +62,11 @@ async def main(request: PurchaseRequestModel) -> PurchaseResponseModel:
             "success": "False"
         }
 
-    # raise HTTPException(status_code=500, detail="Could not store ticket in the AWS Repository")
-
     # Enviar la URL en la respuesta
     response:PurchaseResponseModel = PurchaseResponseModel(ticket_url=ticket_url, transaction_id=transaction_id)
     return response
+
+    #TODO: devolver respuesta a la cola SQS
 
 
 @app.post("/authenticate")
