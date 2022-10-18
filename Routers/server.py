@@ -42,19 +42,19 @@ async def main(request: PurchaseRequestModel) -> PurchaseResponseModel:
 
     except Exception as e:
         return {
-            "message": e, 
+            "message": "Provided token was not valid", 
             "success": "False"
         }
 
     # Actualizar capacidad en caso de ser posible
-    capacity_checker = CapacityChecker(CAPACITY_QUEUE_URL, EVENTS_TABLE_NAME, AWS_ACCESS_KEY, AWS_ACCESS_SECRET_KEY, AWS_REGION_NAME)
-    capacity_operation_success = capacity_checker.update_capacity(event=requested_concert, number_of_tickets=requested_number_of_tickets)
-    if not capacity_operation_success:
-        raise HTTPException(status_code=400, detail="Requested event is full. There are no more tickets on sale")
-
-    # Guardar el ticket
-    pdf_manager = PDFManager(AWS_ACCESS_KEY, AWS_ACCESS_SECRET_KEY, AWS_REGION_NAME, S3_BUCKET_NAME)
     try:
+        capacity_checker = CapacityChecker(CAPACITY_QUEUE_URL, EVENTS_TABLE_NAME, AWS_ACCESS_KEY, AWS_ACCESS_SECRET_KEY, AWS_REGION_NAME)
+        capacity_operation_success = capacity_checker.update_capacity(event=requested_concert, number_of_tickets=requested_number_of_tickets)
+        if not capacity_operation_success:
+            raise HTTPException(status_code=400, detail="Requested event is full. There are no more tickets on sale")
+
+        # Guardar el ticket
+        pdf_manager = PDFManager(AWS_ACCESS_KEY, AWS_ACCESS_SECRET_KEY, AWS_REGION_NAME, S3_BUCKET_NAME)
         ticket_url = pdf_manager.build_and_save_pdf(concert=requested_concert, number_of_tickets=requested_number_of_tickets, transaction_id=transaction_id, email=email)
     except Exception as e:
         return {
