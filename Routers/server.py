@@ -7,6 +7,7 @@ from Infrastructure.CapacityChecker import CapacityChecker
 from Infrastructure.PDFManager import PDFManager
 from Infrastructure.TokenBuilder import TokenBuilder
 from Infrastructure.UUIDGenerator import UUIDGenerator
+from Infrastructure.UserAuthenticator import UserAuthenticator
 
 from Models.AuthenticateRequestModel import AuthenticateRequestModel
 from Models.AuthenticateResponseModel import AuthenticateResponseModel
@@ -30,7 +31,7 @@ S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
 @app.get("/purchase")
 async def main(request: PurchaseRequestModel) -> PurchaseResponseModel:
 
-    #TODO: recoger respuesta de la cola
+    # Recogemos información de la request
     requested_concert = request.concert
     requested_number_of_tickets = request.number_of_tickets
     transaction_id = request.transaction_id
@@ -76,11 +77,13 @@ async def authenticate(request: AuthenticateRequestModel) -> AuthenticateRespons
     email = request.email
     password = request.password
 
-    # Consulto par (email, pwd) en el repositorio
-
+    # Consulto par (email, pwd) en el repositorio (DynamoDB)
+    user_authenticator = UserAuthenticator(USERS_TABLE_NAME, AWS_ACCESS_KEY, AWS_ACCESS_SECRET_KEY, AWS_REGION_NAME)
+    auth_success = user_authenticator.authenticate_user(email, password)
+    auth_success = True
 
     # Si éxito, devolver token de sesión
-    if True:
+    if auth_success:
         new_token:str = TokenBuilder.new_token(email=email, secret=SECRET)
         response:AuthenticateResponseModel = AuthenticateResponseModel(token=new_token, success=True)
         return response
