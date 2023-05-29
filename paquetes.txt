@@ -1,0 +1,5 @@
+fpdf
+python-dotenv
+jwt
+fastapi
+boto3
