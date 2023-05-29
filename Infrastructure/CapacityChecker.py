@@ -39,15 +39,21 @@ class CapacityChecker:
 
         # Get from DynamoDB repository max capacity for the requested event with SQSReader
         dynamodb_connector = DynamoDBConnector(self.aws_key, self.aws_secret_key, self.aws_region)
-        event = dynamodb_connector.get_item(
-            table_name= self.events_dynamodb_table_name,
-            key="event", 
-            type="S", 
-            value=event
-        )
-        response = {
-            "event": event["event"],
-            "max_capacity": event["max_capacity"],
-            "current_capacity": event["current_capacity"]
-        }
-        return response
+        try:
+            event = dynamodb_connector.get_item(
+                table_name= self.events_dynamodb_table_name,
+                key="event", 
+                type="S", 
+                value=event
+            )
+
+            response = {
+                "event": event["event"],
+                "max_capacity": event["max_capacity"],
+                "current_capacity": event["current_capacity"]
+            }
+
+            return response
+
+        except Exception as e:
+            raise
