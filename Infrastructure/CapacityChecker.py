@@ -6,8 +6,7 @@ from AWS.DynamoDBConnector import DynamoDBConnector
 
 class CapacityChecker:
 
-    def __init__(self, capacity_queue_url:str, events_dynamodb_table_name:str, aws_key:str, aws_secret_key:str, aws_region:str):
-        self.capacity_queue_url = capacity_queue_url
+    def __init__(self, events_dynamodb_table_name:str, aws_key:str, aws_secret_key:str, aws_region:str):
         self.events_dynamodb_table_name = events_dynamodb_table_name
         self.aws_key = aws_key
         self.aws_secret_key = aws_secret_key
@@ -15,48 +14,42 @@ class CapacityChecker:
 
     def update_capacity(self, event: str, number_of_tickets: int) -> bool:
 
-        # Get current data in Capacity SQS Queue
-        sqs_reader = SQSReader(self.aws_key, self.aws_secret_key, self.aws_region)
-        message = sqs_reader.read_message(queue_url=self.capacity_queue_url)
+        # Get current data from DynamoDB Events Table
+        event_item = self.get_capacities(event)
 
-        # Read capacity from JSON message
-        for concert in message:
-            if concert["event"] == event:
-                current_capacity = concert["current_capacity"]
-                break
+        # TODO: check if this triggers errors (catch fetch error from DB)
 
-        # Get max capacity for the requested event
-        max_capacity = self.get_max_capacity(event=event)
+        current_capacity = event_item["current_capacity"]
+        max_capacity = event_item["max_capacity"]
 
         # Check if possible to purchase the amount of requested tickets
         if (number_of_tickets + current_capacity) > max_capacity:
             return False
 
-        # Update the capacity
-        for concert in message:
-            if concert["event"] == event:
-                concert["current_capacity"] += number_of_tickets
+        # Update capacity
+        dynamodb_connector = DynamoDBConnector(self, self.aws_secret_key, self.aws_region)
+        new_capacity = current_capacity + number_of_tickets
+        result = dynamodb_connector.update_item(self.events_dynamodb_table_name, key='event_name', value=event, new_value=new_capacity)
 
-        # Send updated message with SQSWriter
-        sqs_writer = SQSWriter(self.aws_key, self.aws_secret_key, self.aws_region)
-        success = sqs_writer.write_message(queue_url=self.capacity_queue_url, message_body=message)
-        if not success:
-            raise HTTPException(status_code=400, detail="Unable to send message "+message+" to the SQS queue <"+self.capacity_queue_url+">")
-
-        if current_capacity == None:
-            raise HTTPException(status_code=400, detail="Unable to retrieve current capacity for requested event <"+event+">")
+        if not result.success:
+            raise HTTPException(status_code=400, detail="Unable to update capacity of event <"+event+"> - "+result.message)
         
-        return current_capacity
+        return result.success
 
 
-    def get_max_capacity(self, event:str) -> int:
+    def get_capacities(self, event:str) -> dict:
 
         # Get from DynamoDB repository max capacity for the requested event with SQSReader
         dynamodb_connector = DynamoDBConnector(self.aws_key, self.aws_secret_key, self.aws_region)
-        max_capacity = dynamodb_connector.get_item(
+        event = dynamodb_connector.get_item(
             table_name= self.events_dynamodb_table_name,
             key="event", 
             type="S", 
             value=event
         )
-        return max_capacity
+        response = {
+            "event": event["event"],
+            "max_capacity": event["max_capacity"],
+            "current_capacity": event["current_capacity"]
+        }
+        return response
