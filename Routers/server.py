@@ -57,6 +57,7 @@ async def main(request: PurchaseRequestModel) -> PurchaseResponseModel:
         # Guardar el ticket
         pdf_manager = PDFManager(AWS_ACCESS_KEY, AWS_ACCESS_SECRET_KEY, AWS_REGION_NAME, S3_BUCKET_NAME)
         ticket_url = pdf_manager.build_and_save_pdf(concert=requested_concert, number_of_tickets=requested_number_of_tickets, transaction_id=transaction_id, email=email)
+        
     except Exception as e:
         return {
             "message": e, 
