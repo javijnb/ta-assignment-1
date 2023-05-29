@@ -1,7 +1,5 @@
 from fastapi import HTTPException
 
-from AWS.SQSReader import SQSReader
-from AWS.SQSWriter import SQSWriter
 from AWS.DynamoDBConnector import DynamoDBConnector
 
 class CapacityChecker:
