@@ -21,3 +21,24 @@ class DynamoDBConnector:
             }
         )
         return response["Item"]
+    
+    def update_item(self, table_name:str, key:str, value, new_value:str):
+        try:
+            response = self.dynamodb_client.update_item(
+                TableName = table_name,
+                Key={
+                    key: value
+                },
+                UpdateExpression = "SET current_capacity = :new_value",
+                ReturnValues="UPDATED_NEW")
+            
+            return {
+                "message": response,
+                "success": "True"
+            }
+            
+        except Exception as e:
+            return {
+                "message": e, 
+                "success": "False"
+            }
