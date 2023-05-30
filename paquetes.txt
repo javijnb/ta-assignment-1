@@ -3,3 +3,4 @@ python-dotenv
 jwt
 fastapi
 boto3
+flask-bootstrap
