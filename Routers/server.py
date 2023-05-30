@@ -31,6 +31,7 @@ S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
 async def main(request: PurchaseRequestModel) -> PurchaseResponseModel:
 
     # Recogemos información de la request
+    print("<PURCHASE> New request")
     requested_concert = request.concert
     requested_number_of_tickets = request.number_of_tickets
     transaction_id = request.transaction_id
@@ -54,8 +55,9 @@ async def main(request: PurchaseRequestModel) -> PurchaseResponseModel:
             return response
 
         # Guardar el ticket
-        pdf_manager = PDFManager(AWS_ACCESS_KEY, AWS_ACCESS_SECRET_KEY, AWS_REGION_NAME, S3_BUCKET_NAME)
-        ticket_url = pdf_manager.build_and_save_pdf(concert=requested_concert, number_of_tickets=requested_number_of_tickets, transaction_id=transaction_id, email=email)
+        # pdf_manager = PDFManager(AWS_ACCESS_KEY, AWS_ACCESS_SECRET_KEY, AWS_REGION_NAME, S3_BUCKET_NAME)
+        # ticket_url = pdf_manager.build_and_save_pdf(concert=requested_concert, number_of_tickets=requested_number_of_tickets, transaction_id=transaction_id, email=email)
+        ticket_url = "ticket mock"
 
     except Exception as e:
         response:PurchaseResponseModel = PurchaseResponseModel(ticket_url="", transaction_id="", success=False, message="Purchase failed - "+str(e))
@@ -72,6 +74,7 @@ async def main(request: PurchaseRequestModel) -> PurchaseResponseModel:
 async def authenticate(request: AuthenticateRequestModel) -> AuthenticateResponseModel:
     
     # Recoger parámetros
+    print("<AUTH> New request")
     email = request.email
     password = request.password
 
