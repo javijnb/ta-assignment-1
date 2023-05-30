@@ -23,6 +23,8 @@ class DynamoDBConnector:
         return response["Item"]
     
     def update_item(self, table_name:str, key:str, value, new_value:str):
+
+        # TODO: check if this is mutual exclusive
         try:
             response = self.dynamodb_client.update_item(
                 TableName = table_name,
