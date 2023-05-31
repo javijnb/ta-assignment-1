@@ -1,28 +1,40 @@
 from dotenv import load_dotenv
 import os
 import boto3
+import json
 
+# CREDENTIALS
 load_dotenv()
 AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY_ID')
 AWS_ACCESS_SECRET_KEY = os.getenv('AWS_ACCESS_SECRET_KEY')
 AWS_REGION_NAME = os.getenv('AWS_REGION_NAME')
+INSTANCES_IDS = json.loads(os.getenv('INSTANCES_IDS'))
+INSTANCES_DNS_NAMES = json.loads(os.getenv('INSTANCES_DNS_NAMES'))
 
-# TODO: Variables para ID_instancias y DNS_names
+# CLIENTS GLOBAL VARS
+DYNAMODB_CLIENT = ""
+EC2_CLIENT = ""
+SQS_CLIENT = ""
+S3_CLIENT = ""
 
-# CLIENTS
+# CLIENTS METHODS
 def new_dynamoDB_client():
-    return
+    dynamodb_client = boto3.client('dynamodb', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_ACCESS_SECRET_KEY, region_name=AWS_REGION_NAME)
+    return dynamodb_client
 
 def new_EC2_client():
-    return
+    ec2_client = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_ACCESS_SECRET_KEY, region_name=AWS_REGION_NAME)
+    return ec2_client
 
 def new_SQS_client():
-    return
+    sqs_client = boto3.client('sqs', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_ACCESS_SECRET_KEY, region_name=AWS_REGION_NAME)
+    return sqs_client
 
 def new_S3_client():
-    return
+    s3_client = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_ACCESS_SECRET_KEY, region_name=AWS_REGION_NAME)
+    return s3_client
 
-# DYNAMO_DB INSTANCES
+# DYNAMODB INSTANCES
 def create_dynamoDB_database():
     return
 
@@ -56,6 +68,14 @@ def delete_S3_instance():
 
 # MAIN
 if __name__ == '__main__':
+
+    print("Creando clientes AWS...")
+    DYNAMODB_CLIENT = new_dynamoDB_client()
+    EC2_CLIENT = new_EC2_client()
+    S3_CLIENT = new_S3_client()
+    SQS_CLIENT = new_SQS_client()
+    print("Clientes AWS creados con éxito!\n")
+
     while True:
         print("Elige qué tipo de servicio desea gestionar:")
         print("1) EC2")
