@@ -37,7 +37,7 @@ class CapacityChecker:
 
     def get_capacities(self, event:str) -> dict:
 
-        # Get from DynamoDB repository max capacity for the requested event with SQSReader
+        # Get from DynamoDB repository max capacity for the requested event
         dynamodb_connector = DynamoDBConnector(self.aws_key, self.aws_secret_key, self.aws_region)
         try:
             event = dynamodb_connector.get_item(
