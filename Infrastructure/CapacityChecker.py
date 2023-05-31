@@ -1,5 +1,4 @@
 from fastapi import HTTPException
-
 from AWS.DynamoDBConnector import DynamoDBConnector
 
 class CapacityChecker:
@@ -13,14 +12,15 @@ class CapacityChecker:
     def update_capacity(self, event: str, number_of_tickets: int) -> bool:
 
         # Get current data from DynamoDB Events Table
-        event_item = self.get_capacities(event)
-
-        # TODO: check if this triggers errors (catch fetch error from DB)
+        try:
+            event_item = self.get_capacities(event)
+        except Exception as e:
+            raise e
 
         current_capacity = event_item["current_capacity"]
         max_capacity = event_item["max_capacity"]
 
-        # Check if possible to purchase the amount of requested tickets
+        # Check if it is possible to purchase the amount of requested tickets
         if (number_of_tickets + current_capacity) > max_capacity:
             return False
 
@@ -56,4 +56,4 @@ class CapacityChecker:
             return response
 
         except Exception as e:
-            raise
+            raise e
