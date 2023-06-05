@@ -2,6 +2,12 @@ from dotenv import load_dotenv
 import os
 import boto3
 import json
+import time
+import paramiko
+import subprocess
+
+# PATHS
+SCRIPT_PATH = "./Scripts/"
 
 # CREDENTIALS
 load_dotenv()
@@ -23,7 +29,7 @@ def new_dynamoDB_client():
     return dynamodb_client
 
 def new_EC2_client():
-    ec2_client = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_ACCESS_SECRET_KEY, region_name=AWS_REGION_NAME)
+    ec2_client = boto3.client('ec2', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_ACCESS_SECRET_KEY, region_name=AWS_REGION_NAME)
     return ec2_client
 
 def new_SQS_client():
@@ -42,14 +48,32 @@ def delete_dynamoDB_database():
     return
 
 # EC2 INSTANCES
-def create_EC2_frontend():
-    return
+def reboot_ec2_instances():
+    print("<EC2> Reiniciando instancias...")
+    EC2_CLIENT.reboot_instances(InstancesIds=INSTANCES_IDS)
+    time.sleep(15)
+    for index, instance_dns in enumerate(INSTANCES_DNS_NAMES):
+        if index == len(INSTANCES_DNS_NAMES) - 1:
+            print("<EC2> Deploying Frontend...")
 
-def create_EC2_backend():
-    return
+            subprocess.call(['sh', SCRIPT_PATH+'zip_frontend.sh'])
 
-# Reboot (?)
-def delete_EC2_instance():
+            key = paramiko.RSAKey.from_private_key_file('./labuser.pem')
+            ssh_client = paramiko.SSHClient()
+            ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh_client.connect(hostname=instance_dns, username='ec2-user', pkey=key, look_for_keys=False)
+
+            sftp = ssh_client.open_sftp()
+            sftp.put('./frontend.zip', '~/frontend.zip')
+            sftp.put('deploy_frontend.sh', '~/deploy_frontend.sh')
+            sftp.put(SCRIPT_PATH+'unzip_frontend.sh', '~/unzip_frontend.sh')
+            sftp.close()
+
+            ssh_client.exec_command('chmod +x unzip_frontend.sh')
+            ssh_client.exec_command('./unzip_frontend.sh')
+            ssh_client.exec_command('./deploy_frontend.sh')
+
+            print("<EC2> Success deploying Frontend !")
     return
 
 # SQS INSTANCES
@@ -87,17 +111,7 @@ if __name__ == '__main__':
 
         # EC2
         if user_input == 1:
-            print("¿Qué operación desea llevar a cabo?")
-            print("1) Crear una nueva instancia EC2 de Backend")
-            print("2) Crear una nueva instancia EC2 de Frontend")
-            print("3) Eliminar una instancia EC2")
-            response = int(input())
-            if response == 1:
-                create_EC2_backend()
-            if response == 2:
-                create_EC2_frontend()
-            if response == 3:
-                delete_EC2_instance()
+            reboot_ec2_instances()
 
         # DynamoDB
         elif user_input == 2:
