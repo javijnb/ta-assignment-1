@@ -1,1 +1,0 @@
-python AWS_manager.py
