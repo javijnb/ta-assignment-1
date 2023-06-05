@@ -57,7 +57,7 @@ async def main(request: PurchaseRequestModel) -> PurchaseResponseModel:
         # Guardar el ticket
         # pdf_manager = PDFManager(AWS_ACCESS_KEY, AWS_ACCESS_SECRET_KEY, AWS_REGION_NAME, S3_BUCKET_NAME)
         # ticket_url = pdf_manager.build_and_save_pdf(concert=requested_concert, number_of_tickets=requested_number_of_tickets, transaction_id=transaction_id, email=email)
-        ticket_url = "ticket mock"
+        ticket_url = "ticket mocked"
 
     except Exception as e:
         response:PurchaseResponseModel = PurchaseResponseModel(ticket_url="", transaction_id="", success=False, message="Purchase failed - "+str(e))
@@ -79,8 +79,8 @@ async def authenticate(request: AuthenticateRequestModel) -> AuthenticateRespons
     password = request.password
 
     # Consulto par (email, pwd) en el repositorio (DynamoDB)
-    # user_authenticator = UserAuthenticator(USERS_TABLE_NAME, AWS_ACCESS_KEY, AWS_ACCESS_SECRET_KEY, AWS_REGION_NAME)
-    # auth_success = user_authenticator.authenticate_user(email, password)
+    user_authenticator = UserAuthenticator(USERS_TABLE_NAME, AWS_ACCESS_KEY, AWS_ACCESS_SECRET_KEY, AWS_REGION_NAME)
+    auth_success = user_authenticator.authenticate_user(email, password)
     auth_success = True
 
     # Si éxito, devolver token de sesión
