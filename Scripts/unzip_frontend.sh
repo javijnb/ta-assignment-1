@@ -1,1 +1,1 @@
-unzip ../frontend.zip -d ~/
+unzip ./frontend.zip -d ~/
