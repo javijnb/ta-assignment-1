@@ -1,1 +1,1 @@
-python ../AWS_manager.py
+python AWS_manager.py
