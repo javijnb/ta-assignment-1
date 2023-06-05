@@ -14,7 +14,9 @@ load_dotenv()
 AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY_ID')
 AWS_ACCESS_SECRET_KEY = os.getenv('AWS_ACCESS_SECRET_KEY')
 AWS_REGION_NAME = os.getenv('AWS_REGION_NAME')
-INSTANCES_IDS = json.loads(os.getenv('INSTANCES_IDS'))
+AWS_SESSION_TOKEN = os.getenv('AWS_SESSION_TOKEN')
+#INSTANCES_IDS = os.getenv('INSTANCES_IDS')
+INSTANCES_IDS = ["i-0eeb6a2bed5a9f121"]
 INSTANCES_DNS_NAMES = json.loads(os.getenv('INSTANCES_DNS_NAMES'))
 
 # CLIENTS GLOBAL VARS
@@ -25,19 +27,19 @@ S3_CLIENT = ""
 
 # CLIENTS METHODS
 def new_dynamoDB_client():
-    dynamodb_client = boto3.client('dynamodb', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_ACCESS_SECRET_KEY, region_name=AWS_REGION_NAME)
+    dynamodb_client = boto3.client('dynamodb', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_ACCESS_SECRET_KEY, region_name=AWS_REGION_NAME, aws_session_token=AWS_SESSION_TOKEN)
     return dynamodb_client
 
 def new_EC2_client():
-    ec2_client = boto3.client('ec2', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_ACCESS_SECRET_KEY, region_name=AWS_REGION_NAME)
+    ec2_client = boto3.client('ec2', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_ACCESS_SECRET_KEY, region_name=AWS_REGION_NAME, aws_session_token=AWS_SESSION_TOKEN)
     return ec2_client
 
 def new_SQS_client():
-    sqs_client = boto3.client('sqs', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_ACCESS_SECRET_KEY, region_name=AWS_REGION_NAME)
+    sqs_client = boto3.client('sqs', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_ACCESS_SECRET_KEY, region_name=AWS_REGION_NAME, aws_session_token=AWS_SESSION_TOKEN)
     return sqs_client
 
 def new_S3_client():
-    s3_client = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_ACCESS_SECRET_KEY, region_name=AWS_REGION_NAME)
+    s3_client = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_ACCESS_SECRET_KEY, region_name=AWS_REGION_NAME, aws_session_token=AWS_SESSION_TOKEN)
     return s3_client
 
 # DYNAMODB INSTANCES
@@ -50,7 +52,7 @@ def delete_dynamoDB_database():
 # EC2 INSTANCES
 def reboot_ec2_instances():
     print("<EC2> Reiniciando instancias...")
-    EC2_CLIENT.reboot_instances(InstancesIds=INSTANCES_IDS)
+    EC2_CLIENT.reboot_instances(InstanceIds=INSTANCES_IDS)
     time.sleep(15)
     for index, instance_dns in enumerate(INSTANCES_DNS_NAMES):
         if index == len(INSTANCES_DNS_NAMES) - 1:
@@ -58,7 +60,7 @@ def reboot_ec2_instances():
 
             subprocess.call(['sh', SCRIPT_PATH+'zip_frontend.sh'])
 
-            key = paramiko.RSAKey.from_private_key_file('./labuser.pem')
+            key = paramiko.RSAKey.from_private_key_file('./labsuser.pem')
             ssh_client = paramiko.SSHClient()
             ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh_client.connect(hostname=instance_dns, username='ec2-user', pkey=key, look_for_keys=False)
@@ -94,10 +96,10 @@ def delete_S3_instance():
 if __name__ == '__main__':
 
     print("Creando clientes AWS...")
-    DYNAMODB_CLIENT = new_dynamoDB_client()
+    #DYNAMODB_CLIENT = new_dynamoDB_client()
     EC2_CLIENT = new_EC2_client()
-    S3_CLIENT = new_S3_client()
-    SQS_CLIENT = new_SQS_client()
+    #S3_CLIENT = new_S3_client()
+    #SQS_CLIENT = new_SQS_client()
     print("Clientes AWS creados con éxito!\n")
 
     while True:
