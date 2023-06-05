@@ -3,3 +3,4 @@ __pycache__/
 .vscode/
 notas_AWS.txt
 *.pem
+*.zip
