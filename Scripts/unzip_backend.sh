@@ -1,0 +1,1 @@
+unzip ../backend.zip -d ~/

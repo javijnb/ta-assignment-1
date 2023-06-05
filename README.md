@@ -1,5 +1,10 @@
 # TA - FIRST ASSIGNMENT
 
+## Grant permission to scripts
+```bash
+chmod +x ./Scripts/*
+```
+
 ## Deployment of BACKEND
 To deploy this service run the following commands in the AWS shell
 
