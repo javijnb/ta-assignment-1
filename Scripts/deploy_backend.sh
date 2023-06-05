@@ -1,0 +1,1 @@
+python -m uvicorn Routers.server:app --reload
