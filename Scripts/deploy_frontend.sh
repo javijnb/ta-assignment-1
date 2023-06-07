@@ -1,1 +1,1 @@
-python Frontend/main.py
+python3 Frontend/main.py
