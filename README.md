@@ -30,4 +30,8 @@ chmod +x AWS_manager.sh
 Please, pay attention to the content of the .env files when deploying the different AWS services.
 
 ## Python dependencies
-The file `paquetes.txt` contains the needed Python depedencies that must be installed using the tool ``pip`` / ``pip3`` in order to make this project work properly.
+Install the dependencies using:
+
+```bash
+pip install -r requirements.txt
+```
