@@ -15,9 +15,8 @@ AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY_ID')
 AWS_ACCESS_SECRET_KEY = os.getenv('AWS_ACCESS_SECRET_KEY')
 AWS_REGION_NAME = os.getenv('AWS_REGION_NAME')
 AWS_SESSION_TOKEN = os.getenv('AWS_SESSION_TOKEN')
-#INSTANCES_IDS = os.getenv('INSTANCES_IDS')
-INSTANCES_IDS = ["i-0eeb6a2bed5a9f121"]
-INSTANCES_DNS_NAMES = ["ec2-54-86-143-223.compute-1.amazonaws.com"]
+INSTANCES_IDS = ["i-013d087c46d1eb47a"]
+INSTANCES_DNS_NAMES = ["ec2-54-152-197-199.compute-1.amazonaws.com"]
 
 # CLIENTS GLOBAL VARS
 DYNAMODB_CLIENT = ""
@@ -56,8 +55,8 @@ def reboot_ec2_instances():
     time.sleep(8)
     for index, instance_dns in enumerate(INSTANCES_DNS_NAMES):
         if index == len(INSTANCES_DNS_NAMES) - 1:
-            print("<EC2> Zipping Frontend...")
-            subprocess.call(['sh', SCRIPT_PATH+'zip_frontend.sh'])
+            # print("<EC2> Zipping Frontend...")
+            # subprocess.call(['sh', SCRIPT_PATH+'zip_frontend.sh'])
 
             print("<EC2> Conectando con la instancia...")
             key = paramiko.RSAKey.from_private_key_file('./labsuser.pem')
@@ -67,19 +66,14 @@ def reboot_ec2_instances():
 
             print("<EC2> Enviando Frontend...")
             sftp = ssh_client.open_sftp()
-            print("1")
-            sftp.put('~/frontend.zip', '~/frontend.zip')
-            print("2")
-            sftp.put('./Scripts/deploy_frontend.sh', '~/deploy_frontend.sh')
-            print("3")
-            sftp.put(SCRIPT_PATH+'unzip_frontend.sh', '~/unzip_frontend.sh')
-            print("4")
+            sftp.put('./frontend.zip', '/home/ec2-user/frontend.zip')
+            sftp.put('./Scripts/deploy_frontend.sh', '/home/ec2-user/deploy_frontend.sh')
+            sftp.put('./Scripts/unzip_frontend.sh', '/home/ec2-user/unzip_frontend.sh')
             sftp.close()
 
             print("<EC2> Desplegando Frontend...")
             ssh_client.exec_command('chmod +x *.sh')
             ssh_client.exec_command('./unzip_frontend.sh')
-            ssh_client.exec_command('./deploy_frontend.sh')
 
             print("<EC2> Success deploying Frontend !")
     return
