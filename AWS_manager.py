@@ -53,25 +53,31 @@ def delete_dynamoDB_database():
 def reboot_ec2_instances():
     print("<EC2> Reiniciando instancias...")
     EC2_CLIENT.reboot_instances(InstanceIds=INSTANCES_IDS)
-    time.sleep(15)
+    time.sleep(8)
     for index, instance_dns in enumerate(INSTANCES_DNS_NAMES):
         if index == len(INSTANCES_DNS_NAMES) - 1:
-            print("<EC2> Deploying Frontend...")
-
+            print("<EC2> Zipping Frontend...")
             subprocess.call(['sh', SCRIPT_PATH+'zip_frontend.sh'])
 
+            print("<EC2> Conectando con la instancia...")
             key = paramiko.RSAKey.from_private_key_file('./labsuser.pem')
             ssh_client = paramiko.SSHClient()
             ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh_client.connect(hostname=instance_dns, username='ec2-user', pkey=key, look_for_keys=False)
 
+            print("<EC2> Enviando Frontend...")
             sftp = ssh_client.open_sftp()
-            sftp.put('./frontend.zip', '~/frontend.zip')
-            sftp.put('deploy_frontend.sh', '~/deploy_frontend.sh')
+            print("1")
+            sftp.put('~/frontend.zip', '~/frontend.zip')
+            print("2")
+            sftp.put('./Scripts/deploy_frontend.sh', '~/deploy_frontend.sh')
+            print("3")
             sftp.put(SCRIPT_PATH+'unzip_frontend.sh', '~/unzip_frontend.sh')
+            print("4")
             sftp.close()
 
-            ssh_client.exec_command('chmod +x unzip_frontend.sh')
+            print("<EC2> Desplegando Frontend...")
+            ssh_client.exec_command('chmod +x *.sh')
             ssh_client.exec_command('./unzip_frontend.sh')
             ssh_client.exec_command('./deploy_frontend.sh')
 
