@@ -74,25 +74,38 @@ def create_dynamoDB_database():
     print("<DB> Creando bases de datos...")
     auth_table = DYNAMODB_RESOURCE.create_table(
         TableName=USERS_TABLE_NAME,
-        KeySchema=[{'AttributeName': 'email', 'KeyType': 'HASH'}],
-        AttributeDefinitions=[{'AttributeName': 'email', 'AttributeType': 'S'}, {'AttributeName': 'password', 'AttributeType': 'S'}],
-        ProvisionedThroughput={'ReadCapacityUnits': 10, 'WriteCapacities': 10}
+        KeySchema=[
+            {
+                'AttributeName': 'email', 
+                'KeyType': 'HASH'
+            }
+        ],
+        AttributeDefinitions=[
+            {
+                'AttributeName': 'email', 
+                'AttributeType': 'S'
+            }
+        ],
+        ProvisionedThroughput={
+            'ReadCapacityUnits': 5,
+            'WriteCapacityUnits': 5
+        }
     )
+    auth_table.meta.client.get_waiter('table_exists').wait(TableName=USERS_TABLE_NAME)
+    print("<DB> Tabla de autenticación creada con éxito")
     events_table = DYNAMODB_RESOURCE.create_table(
         TableName=EVENTS_TABLE_NAME,
         KeySchema=[{'AttributeName': 'event', 'KeyType': 'HASH'}],
-        AttributeDefinitions=[{'AttributeName': 'event', 'AttributeType': 'S'}, {'AttributeName': 'max_capacity', 'AttributeType': 'N'}, {'AttributeName': 'current_capacity', 'AttributeType': 'N'}],
-        ProvisionedThroughput={'ReadCapacityUnits': 10, 'WriteCapacities': 10}
+        AttributeDefinitions=[{'AttributeName': 'event', 'AttributeType': 'S'}],
+        ProvisionedThroughput={'ReadCapacityUnits': 5, 'WriteCapacityUnits': 5}
     )
-    auth_table.wait_until_exists()
-    print("<DB> Tabla de autenticación creada con éxito")
-    events_table.wait_until_exists()
+    events_table.meta.client.get_waiter('table_exists').wait(TableName=EVENTS_TABLE_NAME)
     print("<DB> Tabla de eventos creada con éxito")
     DYNAMODB_CLIENT.put_item(TableName=USERS_TABLE_NAME, Item={'email':{'S': 'javijnb@gmail.com'}, 'password':{'S':'12345'}})
     DYNAMODB_CLIENT.put_item(TableName=USERS_TABLE_NAME, Item={'email':{'S': 'prueba@gmail.com'}, 'password':{'S':'prueba'}})
-    DYNAMODB_CLIENT.put_item(TableName=EVENTS_TABLE_NAME, Item={'event':{'S': 'Avicii'}, 'max_capacity':{'N': 10}, 'current_capacity':{'N': 0}})
-    DYNAMODB_CLIENT.put_item(TableName=EVENTS_TABLE_NAME, Item={'event':{'S': 'Måneskin'}, 'max_capacity':{'N': 10}, 'current_capacity':{'N': 9}})
-    DYNAMODB_CLIENT.put_item(TableName=EVENTS_TABLE_NAME, Item={'event':{'S': 'Red Hot CHilli Peppers'}, 'max_capacity':{'N': 10}, 'current_capacity':{'N': 10}})
+    DYNAMODB_CLIENT.put_item(TableName=EVENTS_TABLE_NAME, Item={'event':{'S': 'Avicii'}, 'max_capacity':{'S': '10'}, 'current_capacity':{'S': '0'}})
+    DYNAMODB_CLIENT.put_item(TableName=EVENTS_TABLE_NAME, Item={'event':{'S': 'Måneskin'}, 'max_capacity':{'S': '10'}, 'current_capacity':{'S': '9'}})
+    DYNAMODB_CLIENT.put_item(TableName=EVENTS_TABLE_NAME, Item={'event':{'S': 'Red Hot CHilli Peppers'}, 'max_capacity':{'S': '10'}, 'current_capacity':{'S': '10'}})
     print("<DB> Tablas pobladas y creadas con éxito!")
     return
 
@@ -160,7 +173,6 @@ def create_SQS_queue():
     print("<SQS> Colas creadas con éxito!")
     return
 
-
 def delete_SQS_queue():
     print("<SQS> Eliminando colas...")
     SQS_CLIENT.delete_queue(QueueUrl=SQS_REQUEST_QUEUE_URL+SQS_REQUEST_QUEUE_NAME)
@@ -169,11 +181,11 @@ def delete_SQS_queue():
     return
 
 # S3 INSTANCES
-def create_S3_instance():
-    print("<S3> Creando repositorio S3 de PDFs...")
-    S3_CLIENT.create_bucket(Bucket=S3_BUCKET_NAME)
-    print("<S3> Bucket creado con éxito!")
-    return
+# def create_S3_instance():
+#     print("<S3> Creando repositorio S3 de PDFs...")
+#     S3_CLIENT.create_bucket(Bucket=S3_BUCKET_NAME, CreateBucketConfiguration={'LocationConstraint': AWS_REGION_NAME})
+#     print("<S3> Bucket creado con éxito!")
+#     return
 
 def delete_S3_instance():
     print("<S3> Eliminando repositorio S3...")
@@ -210,7 +222,7 @@ if __name__ == '__main__':
         elif user_input == 2:
             print("¿Qué operación desea llevar a cabo?")
             print("1) Crear una nueva instancia DynamoDB")
-            print("2) Eliminar una nueva instancia DynamoDB")
+            print("2) Eliminar una instancia DynamoDB")
             response = int(input())
             if response == 1:
                 create_dynamoDB_database()
@@ -221,10 +233,11 @@ if __name__ == '__main__':
         elif user_input == 3:
             print("¿Qué operación desea llevar a cabo?")
             print("1) Crear una nueva instancia S3")
-            print("2) Eliminar una nueva instancia S3")
+            print("2) Eliminar una instancia S3")
             response = int(input())
             if response == 1:
-                create_S3_instance()
+                #create_S3_instance()
+                print(" Opción deshabilitada")
             if response == 2:
                 delete_S3_instance()
 
@@ -232,7 +245,7 @@ if __name__ == '__main__':
         elif user_input == 4:
             print("¿Qué operación desea llevar a cabo?")
             print("1) Crear una nueva instancia SQS")
-            print("2) Eliminar una nueva instancia SQS")
+            print("2) Eliminar una instancia SQS")
             response = int(input())
             if response == 1:
                 create_SQS_queue()
