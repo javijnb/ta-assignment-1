@@ -47,7 +47,7 @@ Name > Frontend
 ```
 
 ## Python dependencies
-In case you need to tun the Backend locally, install the required dependencies using:
+In case you need to run the Backend locally, install the required dependencies using:
 
 ```bash
 pip install -r requirements.txt
