@@ -24,7 +24,7 @@ To deploy this service run the following commands in the AWS shell of the EC2 in
 chmod +x deploy_server.sh
 sudo yum install python pip
 pip3 install -r requirements.txt
-./deploy_frontend.sh
+./deploy_backend.sh
 ```
 
 ## Deployment of FRONTEND
