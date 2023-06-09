@@ -3,6 +3,7 @@ from flask import render_template
 import requests
 import json
 
+# Comunicación mediante colas (!)
 backend_url = "http://localhost:8000/authenticate"
 TOKEN = ""
 
