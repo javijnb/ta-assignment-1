@@ -1,10 +1,8 @@
 from dotenv import load_dotenv
 import os
 import boto3
-import json
 import time
 import paramiko
-import subprocess
 
 # PATHS
 SCRIPT_PATH = "./Scripts/"
@@ -15,19 +13,33 @@ AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY_ID')
 AWS_ACCESS_SECRET_KEY = os.getenv('AWS_ACCESS_SECRET_KEY')
 AWS_REGION_NAME = os.getenv('AWS_REGION_NAME')
 AWS_SESSION_TOKEN = os.getenv('AWS_SESSION_TOKEN')
+
+USERS_TABLE_NAME = os.getenv('USERS_TABLE_NAME')
+EVENTS_TABLE_NAME = os.getenv('EVENTS_TABLE_NAME')
+
+SQS_REQUEST_QUEUE_NAME=os.getenv('SQS_REQUEST_QUEUE_NAME')
+SQS_RESPONSE_QUEUE_NAME=os.getenv('SQS_RESPONSE_QUEUE_NAME')
+SQS_REQUEST_QUEUE_URL=os.getenv('SQS_REQUEST_QUEUE_URL')
+SQS_RESPONSE_QUEUE_URL=os.getenv('SQS_RESPONSE_QUEUE_URL')
+
+S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
+
 INSTANCES_IDS = ["i-013d087c46d1eb47a"]
 INSTANCES_DNS_NAMES = ["ec2-54-152-197-199.compute-1.amazonaws.com"]
 
 # CLIENTS GLOBAL VARS
 DYNAMODB_CLIENT = ""
+DYNAMODB_RESOURCE = ""
 EC2_CLIENT = ""
 SQS_CLIENT = ""
 S3_CLIENT = ""
+S3_RESOURCE = ""
 
 # CLIENTS METHODS
 def new_dynamoDB_client():
     dynamodb_client = boto3.client('dynamodb', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_ACCESS_SECRET_KEY, region_name=AWS_REGION_NAME, aws_session_token=AWS_SESSION_TOKEN)
-    return dynamodb_client
+    dynamodb_resource = boto3.resource('dynamodb', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_ACCESS_SECRET_KEY, region_name=AWS_REGION_NAME, aws_session_token=AWS_SESSION_TOKEN)
+    return dynamodb_client, dynamodb_resource
 
 def new_EC2_client():
     ec2_client = boto3.client('ec2', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_ACCESS_SECRET_KEY, region_name=AWS_REGION_NAME, aws_session_token=AWS_SESSION_TOKEN)
@@ -39,13 +51,42 @@ def new_SQS_client():
 
 def new_S3_client():
     s3_client = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_ACCESS_SECRET_KEY, region_name=AWS_REGION_NAME, aws_session_token=AWS_SESSION_TOKEN)
-    return s3_client
+    s3_resource = boto3.resource('s3', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_ACCESS_SECRET_KEY, region_name=AWS_REGION_NAME, aws_session_token=AWS_SESSION_TOKEN)
+    return s3_client, s3_resource
+
 
 # DYNAMODB INSTANCES
 def create_dynamoDB_database():
+    print("<DB> Creando bases de datos...")
+    auth_table = DYNAMODB_RESOURCE.create_table(
+        TableName=USERS_TABLE_NAME,
+        KeySchema=[{'AttributeName': 'email', 'KeyType': 'HASH'}],
+        AttributeDefinitions=[{'AttributeName': 'email', 'AttributeType': 'S'}, {'AttributeName': 'password', 'AttributeType': 'S'}],
+        ProvisionedThroughput={'ReadCapacityUnits': 10, 'WriteCapacities': 10}
+    )
+    events_table = DYNAMODB_RESOURCE.create_table(
+        TableName=EVENTS_TABLE_NAME,
+        KeySchema=[{'AttributeName': 'event', 'KeyType': 'HASH'}],
+        AttributeDefinitions=[{'AttributeName': 'event', 'AttributeType': 'S'}, {'AttributeName': 'max_capacity', 'AttributeType': 'N'}, {'AttributeName': 'current_capacity', 'AttributeType': 'N'}],
+        ProvisionedThroughput={'ReadCapacityUnits': 10, 'WriteCapacities': 10}
+    )
+    auth_table.wait_until_exists()
+    print("<DB> Tabla de autenticación creada con éxito")
+    events_table.wait_until_exists()
+    print("<DB> Tabla de eventos creada con éxito")
+    DYNAMODB_CLIENT.put_item(TableName=USERS_TABLE_NAME, Item={'email':{'S': 'javijnb@gmail.com'}, 'password':{'S':'12345'}})
+    DYNAMODB_CLIENT.put_item(TableName=USERS_TABLE_NAME, Item={'email':{'S': 'prueba@gmail.com'}, 'password':{'S':'prueba'}})
+    DYNAMODB_CLIENT.put_item(TableName=EVENTS_TABLE_NAME, Item={'event':{'S': 'Avicii'}, 'max_capacity':{'N': 10}, 'current_capacity':{'N': 0}})
+    DYNAMODB_CLIENT.put_item(TableName=EVENTS_TABLE_NAME, Item={'event':{'S': 'Måneskin'}, 'max_capacity':{'N': 10}, 'current_capacity':{'N': 9}})
+    DYNAMODB_CLIENT.put_item(TableName=EVENTS_TABLE_NAME, Item={'event':{'S': 'Red Hot CHilli Peppers'}, 'max_capacity':{'N': 10}, 'current_capacity':{'N': 10}})
+    print("<DB> Tablas pobladas y creadas con éxito!")
     return
 
 def delete_dynamoDB_database():
+    print("<DB> Eliminando tablas de la instancia de DynamoDB...")
+    DYNAMODB_CLIENT.delete_table(TableName=USERS_TABLE_NAME)
+    DYNAMODB_CLIENT.delete_table(TableName=EVENTS_TABLE_NAME)
+    print("<DB> Tablas eliminadas con éxito!")
     return
 
 # EC2 INSTANCES
@@ -55,8 +96,6 @@ def reboot_ec2_instances():
     time.sleep(8)
     for index, instance_dns in enumerate(INSTANCES_DNS_NAMES):
         if index == len(INSTANCES_DNS_NAMES) - 1:
-            # print("<EC2> Zipping Frontend...")
-            # subprocess.call(['sh', SCRIPT_PATH+'zip_frontend.sh'])
 
             print("<EC2> Conectando con la instancia...")
             key = paramiko.RSAKey.from_private_key_file('./labsuser.pem')
@@ -76,30 +115,68 @@ def reboot_ec2_instances():
             ssh_client.exec_command('./unzip_frontend.sh')
 
             print("<EC2> Success deploying Frontend !")
+
+        else:
+            print("<EC2> Conectando con la instancia...")
+            key = paramiko.RSAKey.from_private_key_file('./labsuser.pem')
+            ssh_client = paramiko.SSHClient()
+            ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh_client.connect(hostname=instance_dns, username='ec2-user', pkey=key, look_for_keys=False)
+
+            print("<EC2> Enviando Backend...")
+            sftp = ssh_client.open_sftp()
+            sftp.put('./backend.zip', '/home/ec2-user/backend.zip')
+            sftp.put('./Scripts/deploy_backend.sh', '/home/ec2-user/deploy_backend.sh')
+            sftp.put('./Scripts/unzip_backend.sh', '/home/ec2-user/unzip_backend.sh')
+            sftp.close()
+
+            print("<EC2> Desplegando Backend...")
+            ssh_client.exec_command('chmod +x *.sh')
+            ssh_client.exec_command('./unzip_backend.sh')
+
+            print("<EC2> Success deploying Backend !")
+
     return
 
 # SQS INSTANCES
 def create_SQS_queue():
+    print("<SQS> Creando colas SQS Request y Response ...")
+    SQS_CLIENT.create_queue(QueueName=SQS_REQUEST_QUEUE_NAME, Attributes={'VisibilityTimeout':'10', 'FifoQueue': 'true', 'ContentBasedDeduplication': 'true', 'MessageRetentionPeriod': '3600'})
+    SQS_CLIENT.create_queue(QueueName=SQS_RESPONSE_QUEUE_NAME, Attributes={'VisibilityTimeout':'10', 'FifoQueue': 'true', 'ContentBasedDeduplication': 'true', 'MessageRetentionPeriod': '3600'})
+    print("<SQS> Colas creadas con éxito!")
     return
 
+
 def delete_SQS_queue():
+    print("<SQS> Eliminando colas...")
+    SQS_CLIENT.delete_queue(QueueUrl=SQS_REQUEST_QUEUE_URL+SQS_REQUEST_QUEUE_NAME)
+    SQS_CLIENT.delete_queue(QueueUrl=SQS_RESPONSE_QUEUE_URL+SQS_RESPONSE_QUEUE_NAME)
+    print("<SQS> Colas eliminadas con éxito!")
     return
 
 # S3 INSTANCES
 def create_S3_instance():
+    print("<S3> Creando repositorio S3 de PDFs...")
+    S3_CLIENT.create_bucket(Bucket=S3_BUCKET_NAME)
+    print("<S3> Bucket creado con éxito!")
     return
 
 def delete_S3_instance():
+    print("<S3> Eliminando repositorio S3...")
+    bucket_object = S3_RESOURCE.Bucket(S3_BUCKET_NAME)
+    bucket_object.objects.all().delete()
+    bucket_object.delete()
+    print("<S3> Repositorio eliminado con éxito!")
     return
 
 # MAIN
 if __name__ == '__main__':
 
     print("Creando clientes AWS...")
-    #DYNAMODB_CLIENT = new_dynamoDB_client()
+    DYNAMODB_CLIENT, DYNAMODB_RESOURCE = new_dynamoDB_client()
     EC2_CLIENT = new_EC2_client()
-    #S3_CLIENT = new_S3_client()
-    #SQS_CLIENT = new_SQS_client()
+    S3_CLIENT, S3_RESOURCE = new_S3_client()
+    SQS_CLIENT = new_SQS_client()
     print("Clientes AWS creados con éxito!\n")
 
     while True:
