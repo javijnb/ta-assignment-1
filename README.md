@@ -27,7 +27,7 @@ pip3 install -r requirements.txt
 ./deploy_backend.sh
 ```
 
-After this, it is needed to open the port 8000 to the outside. Head to the frontend instance, Security, click in the Security Group ID, and add a new Enter Rule:
+After this, it is needed to open the port 8000 to the outside. Head to the backend instances, Security, click in the Security Group ID, and add a new Enter Rule:
 
 ```
 Type > TCP custom
