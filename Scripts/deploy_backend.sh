@@ -1,1 +1,1 @@
-python -m uvicorn Routers.server:app --reload
+python3 -m uvicorn Routers.server:app --host "0.0.0.0" --reload
