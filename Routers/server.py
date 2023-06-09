@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from dotenv import load_dotenv
 import jwt
 import os
@@ -22,7 +22,6 @@ SECRET = os.getenv('SECRET')
 AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY_ID')
 AWS_ACCESS_SECRET_KEY = os.getenv('AWS_ACCESS_SECRET_KEY')
 AWS_REGION_NAME = os.getenv('AWS_REGION_NAME')
-CAPACITY_QUEUE_URL = os.getenv('CAPACITY_QUEUE_URL')
 USERS_TABLE_NAME = os.getenv('USERS_TABLE_NAME')
 EVENTS_TABLE_NAME = os.getenv('EVENTS_TABLE_NAME')
 S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
