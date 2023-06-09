@@ -9,14 +9,23 @@ class UserAuthenticator:
         self.aws_region = aws_region
 
     def authenticate_user(self, email:str, pwd:str):
-        dynamodb_connector = DynamoDBConnector(self.aws_key, self.aws_secret_key, self.aws_region)
-        success = dynamodb_connector.get_item(
-            table_name= self.users_dynamodb_table_name,
-            key="email", 
-            type="S", 
-            value=email
-        )
 
-        # TODO: check "success" content
+        try:
+            dynamodb_connector = DynamoDBConnector(self.aws_key, self.aws_secret_key, self.aws_region)
+            query_result = dynamodb_connector.get_item(
+                table_name= self.users_dynamodb_table_name,
+                key="email", 
+                type="S", 
+                value=email
+            )
 
-        return success
+            print("<UserAuthenticator> Received: ", query_result)
+
+            response = {
+                "email": query_result["email"],
+                "password": query_result["password"],
+            }
+            return response
+
+        except Exception as e:
+            raise e
