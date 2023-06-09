@@ -124,7 +124,7 @@ def reboot_ec2_instances():
     for index, instance_dns in enumerate(INSTANCES_DNS_NAMES):
         if index == len(INSTANCES_DNS_NAMES) - 1:
 
-            print("<EC2> Conectando con la instancia...")
+            print("<EC2> Conectando con la instancia ["+instance_dns+"]...")
             key = paramiko.RSAKey.from_private_key_file('./labsuser.pem')
             ssh_client = paramiko.SSHClient()
             ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -144,24 +144,24 @@ def reboot_ec2_instances():
             print("<EC2> Success deploying Frontend !")
 
         else:
-            print("<EC2> Conectando con la instancia...")
+            print("<EC2> Conectando con la instancia ["+instance_dns+"]...")
             key = paramiko.RSAKey.from_private_key_file('./labsuser.pem')
             ssh_client = paramiko.SSHClient()
             ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh_client.connect(hostname=instance_dns, username='ec2-user', pkey=key, look_for_keys=False)
 
-            print("<EC2> Enviando Backend...")
+            print("<EC2> Enviando Backend ["+index+"]...")
             sftp = ssh_client.open_sftp()
             sftp.put('./backend.zip', '/home/ec2-user/backend.zip')
             sftp.put('./Scripts/deploy_backend.sh', '/home/ec2-user/deploy_backend.sh')
             sftp.put('./Scripts/unzip_backend.sh', '/home/ec2-user/unzip_backend.sh')
             sftp.close()
 
-            print("<EC2> Desplegando Backend...")
+            print("<EC2> Desplegando Backend ["+index+"]...")
             ssh_client.exec_command('chmod +x *.sh')
             ssh_client.exec_command('./unzip_backend.sh')
 
-            print("<EC2> Success deploying Backend !")
+            print("<EC2> Success deploying Backend ["+index+"] !")
 
     return
 
