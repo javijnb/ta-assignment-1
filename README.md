@@ -27,6 +27,15 @@ pip3 install -r requirements.txt
 ./deploy_backend.sh
 ```
 
+After this, it is needed to open the port 8000 to the outside. Head to the frontend instance, Security, click in the Security Group ID, and add a new Enter Rule:
+
+```
+Type > TCP custom
+Port > 8000
+Origin > 0.0.0.0/0
+Name > Backend
+```
+
 ## Deployment of FRONTEND
 To deploy the web interface run the following commands in the AWS shell of the EC2 instance that contains the Frontend software:
 
