@@ -14,6 +14,7 @@ AWS_ACCESS_SECRET_KEY = os.getenv('AWS_ACCESS_SECRET_KEY')
 AWS_REGION_NAME = os.getenv('AWS_REGION_NAME')
 AWS_SESSION_TOKEN = os.getenv('AWS_SESSION_TOKEN')
 
+# AWS NAMES AND DNS
 USERS_TABLE_NAME = os.getenv('USERS_TABLE_NAME')
 EVENTS_TABLE_NAME = os.getenv('EVENTS_TABLE_NAME')
 
@@ -24,8 +25,22 @@ SQS_RESPONSE_QUEUE_URL=os.getenv('SQS_RESPONSE_QUEUE_URL')
 
 S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
 
-INSTANCES_IDS = ["i-013d087c46d1eb47a"]
-INSTANCES_DNS_NAMES = ["ec2-54-152-197-199.compute-1.amazonaws.com"]
+INSTANCE_ID_0=os.getenv('INSTANCE_ID_0')
+INSTANCE_ID_1=os.getenv('INSTANCE_ID_1')
+INSTANCE_ID_2=os.getenv('INSTANCE_ID_2')
+INSTANCE_DNS_0=os.getenv('INSTANCE_DNS_0')
+INSTANCE_DNS_1=os.getenv('INSTANCE_DNS_1')
+INSTANCE_DNS_2=os.getenv('INSTANCE_DNS_2')
+
+INSTANCES_IDS = []
+INSTANCES_IDS.append(INSTANCE_ID_0)
+INSTANCES_IDS.append(INSTANCE_ID_1)
+INSTANCES_IDS.append(INSTANCE_ID_2)
+
+INSTANCES_DNS_NAMES = []
+INSTANCES_DNS_NAMES.append(INSTANCE_DNS_0)
+INSTANCES_DNS_NAMES.append(INSTANCE_DNS_1)
+INSTANCES_DNS_NAMES.append(INSTANCE_DNS_2)
 
 # CLIENTS GLOBAL VARS
 DYNAMODB_CLIENT = ""
@@ -53,7 +68,6 @@ def new_S3_client():
     s3_client = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_ACCESS_SECRET_KEY, region_name=AWS_REGION_NAME, aws_session_token=AWS_SESSION_TOKEN)
     s3_resource = boto3.resource('s3', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_ACCESS_SECRET_KEY, region_name=AWS_REGION_NAME, aws_session_token=AWS_SESSION_TOKEN)
     return s3_client, s3_resource
-
 
 # DYNAMODB INSTANCES
 def create_dynamoDB_database():
