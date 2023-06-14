@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from dotenv import load_dotenv
 import jwt
 import os
+import boto3
 
 from Infrastructure.CapacityChecker import CapacityChecker
 from Infrastructure.PDFManager import PDFManager
@@ -21,10 +22,19 @@ PORT = os.getenv('PORT')
 SECRET = os.getenv('SECRET')
 AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY_ID')
 AWS_ACCESS_SECRET_KEY = os.getenv('AWS_ACCESS_SECRET_KEY')
+AWS_SESSION_TOKEN = os.getenv('AWS_SESSION_TOKEN')
 AWS_REGION_NAME = os.getenv('AWS_REGION_NAME')
 USERS_TABLE_NAME = os.getenv('USERS_TABLE_NAME')
 EVENTS_TABLE_NAME = os.getenv('EVENTS_TABLE_NAME')
 S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
+
+
+# AWS Clients
+SQS_CLIENT = boto3.client('sqs', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_ACCESS_SECRET_KEY, region_name=AWS_REGION_NAME, aws_session_token=AWS_SESSION_TOKEN)
+SQS_REQUEST_QUEUE_NAME=os.getenv('SQS_REQUEST_QUEUE_NAME')
+SQS_RESPONSE_QUEUE_NAME=os.getenv('SQS_RESPONSE_QUEUE_NAME')
+SQS_REQUEST_QUEUE_URL=os.getenv('SQS_REQUEST_QUEUE_URL')
+SQS_RESPONSE_QUEUE_URL=os.getenv('SQS_RESPONSE_QUEUE_URL')
 
 @app.get("/purchase")
 async def main(request: PurchaseRequestModel) -> PurchaseResponseModel:
@@ -90,3 +100,10 @@ async def authenticate(request: AuthenticateRequestModel) -> AuthenticateRespons
 
     response:AuthenticateResponseModel = AuthenticateResponseModel(token="", success=False)
     return response
+
+
+@app.post("/main")
+async def rutina_main():
+    while True:
+        fetched_request = SQS_CLIENT.receive_message(QueueUrl=SQS_REQUEST_QUEUE_URL, MessageAttributeNames=['All'], MaxNumberOfMessages=1)
+        messages = list()
