@@ -25,7 +25,7 @@ class UserAuthenticator:
                 "email": query_result["email"],
                 "password": query_result["password"],
             }
-            return response
+            return response, True
 
         except Exception as e:
             raise e
