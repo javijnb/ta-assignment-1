@@ -1,13 +1,12 @@
-from flask import Flask, request
+from flask import Flask, redirect, request, url_for
 from flask import render_template
-import requests
-import json
+from dotenv import load_dotenv
 import os
 import boto3
 
-# Comunicación mediante colas (!)
-backend_url = "http://localhost:8000/authenticate"
 TOKEN = ""
+
+load_dotenv()
 
 AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY_ID')
 AWS_ACCESS_SECRET_KEY = os.getenv('AWS_ACCESS_SECRET_KEY')
@@ -33,30 +32,48 @@ SQS_RESPONSE_QUEUE_URL= SQS_RESPONSE_QUEUE_URL+ SQS_RESPONSE_QUEUE_NAME
 
 app = Flask(__name__)
 
-
 @app.route('/', methods=['GET', 'POST'])
-def index():
+def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        payload = {'email': email, 'password': password}
-        response = requests.post(backend_url, json=payload)
-        
-        if response.status_code == 200:
-            response_json = json.loads(response.text)
-            if response_json["success"] == True:
-                TOKEN = response_json["token"]
-                return "Página de compra"
+
+        try:
+            exist = DYNAMODB_CLIENT.scan(TableName = USERS_TABLE_NAME, ScanFilter = {
+                    "email":{
+                        "AttributeValueList":[ {"S": email} ],
+                        "ComparisonOperator": "EQ"
+                    },
+                    "password":{
+                        "AttributeValueList":[ {"S": password} ],
+                        "ComparisonOperator": "EQ"
+                    }})
+            if len(exist['Items']) == 0:
+                return render_template('login.html')
             
-        return 'Error en el inicio de sesión'
+            else:
+                try:
+                    #print(get_eventos)
+                    return redirect(url_for('home', email=email))
+                    #return render_template('home.html', data=get_eventos())
 
-    return render_template('index.html')
+                except Exception as e:
+                    print(str(e))
 
+        except:
+            return render_template('login.html')
+        
+    else:
+        return render_template('login.html')
+
+@app.route('/home', methods=['GET', 'POST'])
+def home():
+    email = "javijnb@gmail.com"
+    return render_template('home.html', data=get_eventos(), tickets=get_tickets(email))
 
 def get_eventos():
     result = DYNAMODB_CLIENT.scan(TableName=EVENTS_TABLE_NAME)['Items']
     return result
-
 
 def get_tickets(email:str):
     result = []
@@ -67,19 +84,21 @@ def get_tickets(email:str):
         }
     })['Items']
 
-    for ticket in tickets:
-        dictionary = dict()
-        item_ticket = ticket['pdf']['S'].split("/")[-1]
-        url = S3_CLIENT.generate_presigned_url('get_object', Params={
-            'Bucket': S3_BUCKET_NAME,
-            'Key': item_ticket
-        }, ExpiresIn=7200)
-        dictionary['ticket_name'] = item_ticket
-        dictionary['url'] = url
-        result.append(dictionary)
+    message = {
+        'email': {
+            'StringValue': email,
+            'DataType': 'String'
+        },  
+    }
+
+    for index, ticket in enumerate(tickets):
+        sub_dict = {}
+        sub_dict['StringValue'] = ticket
+        sub_dict['DataType'] = 'String'
+        message[str(index)] = sub_dict
+        print(str(index) + ") Ticket - " + ticket['ticket_url']['S'])
 
     return result
-
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True)

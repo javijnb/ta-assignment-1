@@ -221,9 +221,7 @@ while True:
                 print("Elija el número del ticket que quiera descargar: ")
                 order = str(input())
                 ticket_url = message[order]['StringValue']['ticket_url']['S']
-                ticket_name = ticket_url.split("/")[-1]
-                print(ticket_name)
-                S3_CLIENT.download_file(S3_BUCKET_NAME, ticket_name, ticket_name)
+                S3_CLIENT.download_file(S3_BUCKET_NAME, ticket_url, ticket_url)
 
             else:
                 print("<EXIT>")

@@ -13,7 +13,7 @@ class S3Connector:
 
     def save_new_item(self, bucket_name:str, filename:str) -> str:
         self.s3_client.upload_file(filename, bucket_name, filename)
-        return "https://s3.amazonaws.com/"+bucket_name+"/"+filename
+        return filename
 
     def get_item(self, bucket_name:str, filename:str):
         self.s3_client.download_file(bucket_name, filename, filename)

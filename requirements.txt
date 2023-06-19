@@ -1,9 +1,7 @@
 fpdf
 python-dotenv
 jwt
-fastapi
 boto3
 requests
 flask
-uvicorn
 paramiko
