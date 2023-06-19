@@ -1,0 +1,1 @@
+zip -r client.zip client.py Infrastructure AWS Models .env requirements.txt

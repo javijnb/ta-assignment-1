@@ -1,0 +1,1 @@
+unzip ./client.zip -d ~/

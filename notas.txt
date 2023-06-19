@@ -1,0 +1,5 @@
+sudo yum install python pip
+pip install -r requirements.txt
+
+Frontend:
+Seguridad > Grupos de seguridad > Añadir regla

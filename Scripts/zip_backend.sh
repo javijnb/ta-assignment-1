@@ -1,1 +1,1 @@
-zip -r backend.zip AWS Infrastructure Models Routers .env requirements.txt
+zip -r backend.zip AWS Infrastructure Models server.py .env requirements.txt

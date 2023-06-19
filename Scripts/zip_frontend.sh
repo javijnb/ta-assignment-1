@@ -1,1 +1,1 @@
-zip -r frontend.zip ./Frontend
+zip -r frontend.zip ./Frontend requirements.txt

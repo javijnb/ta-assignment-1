@@ -17,6 +17,7 @@ AWS_SESSION_TOKEN = os.getenv('AWS_SESSION_TOKEN')
 # AWS NAMES AND DNS
 USERS_TABLE_NAME = os.getenv('USERS_TABLE_NAME')
 EVENTS_TABLE_NAME = os.getenv('EVENTS_TABLE_NAME')
+TICKETS_TABLE_NAME = os.getenv('TICKETS_TABLE_NAME')
 
 SQS_REQUEST_QUEUE_NAME=os.getenv('SQS_REQUEST_QUEUE_NAME')
 SQS_RESPONSE_QUEUE_NAME=os.getenv('SQS_RESPONSE_QUEUE_NAME')
@@ -93,6 +94,7 @@ def create_dynamoDB_database():
     )
     auth_table.meta.client.get_waiter('table_exists').wait(TableName=USERS_TABLE_NAME)
     print("<DB> Tabla de autenticación creada con éxito")
+
     events_table = DYNAMODB_RESOURCE.create_table(
         TableName=EVENTS_TABLE_NAME,
         KeySchema=[{'AttributeName': 'event', 'KeyType': 'HASH'}],
@@ -101,11 +103,24 @@ def create_dynamoDB_database():
     )
     events_table.meta.client.get_waiter('table_exists').wait(TableName=EVENTS_TABLE_NAME)
     print("<DB> Tabla de eventos creada con éxito")
+
+    tickets_table = DYNAMODB_RESOURCE.create_table(
+        TableName=TICKETS_TABLE_NAME,
+        KeySchema=[{'AttributeName': 'email', 'KeyType': 'HASH'},
+                   {'AttributeName': 'ticket_url', 'KeyType': 'RANGE'}],
+        AttributeDefinitions=[{'AttributeName': 'email', 'AttributeType': 'S'},
+                              {'AttributeName': 'ticket_url', 'AttributeType': 'S'}],
+        ProvisionedThroughput={'ReadCapacityUnits': 5, 'WriteCapacityUnits': 5}
+    )
+    tickets_table.meta.client.get_waiter('table_exists').wait(TableName=TICKETS_TABLE_NAME)
+    print("<DB> Tabla de tickets creada con éxito")
+
     DYNAMODB_CLIENT.put_item(TableName=USERS_TABLE_NAME, Item={'email':{'S': 'javijnb@gmail.com'}, 'password':{'S':'12345'}})
     DYNAMODB_CLIENT.put_item(TableName=USERS_TABLE_NAME, Item={'email':{'S': 'prueba@gmail.com'}, 'password':{'S':'prueba'}})
     DYNAMODB_CLIENT.put_item(TableName=EVENTS_TABLE_NAME, Item={'event':{'S': 'Avicii'}, 'max_capacity':{'S': '10'}, 'current_capacity':{'S': '0'}})
     DYNAMODB_CLIENT.put_item(TableName=EVENTS_TABLE_NAME, Item={'event':{'S': 'Måneskin'}, 'max_capacity':{'S': '10'}, 'current_capacity':{'S': '9'}})
     DYNAMODB_CLIENT.put_item(TableName=EVENTS_TABLE_NAME, Item={'event':{'S': 'Red Hot CHilli Peppers'}, 'max_capacity':{'S': '10'}, 'current_capacity':{'S': '10'}})
+    DYNAMODB_CLIENT.put_item(TableName=TICKETS_TABLE_NAME, Item={'email':{'S': 'javijnb@gmail.com'}, 'ticket_url':{'S':'www.google.es'}})
     print("<DB> Tablas pobladas y creadas con éxito!")
     return
 
@@ -113,6 +128,7 @@ def delete_dynamoDB_database():
     print("<DB> Eliminando tablas de la instancia de DynamoDB...")
     DYNAMODB_CLIENT.delete_table(TableName=USERS_TABLE_NAME)
     DYNAMODB_CLIENT.delete_table(TableName=EVENTS_TABLE_NAME)
+    DYNAMODB_CLIENT.delete_table(TableName=TICKETS_TABLE_NAME)
     print("<DB> Tablas eliminadas con éxito!")
     return
 
@@ -130,18 +146,27 @@ def reboot_ec2_instances():
             ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh_client.connect(hostname=instance_dns, username='ec2-user', pkey=key, look_for_keys=False)
 
-            print("<EC2> Enviando Frontend...")
+            # print("<EC2> Enviando Frontend...")
+            # sftp = ssh_client.open_sftp()
+            # sftp.put('./frontend.zip', '/home/ec2-user/frontend.zip')
+            # sftp.put('./Scripts/deploy_frontend.sh', '/home/ec2-user/deploy_frontend.sh')
+            # sftp.put('./Scripts/unzip_frontend.sh', '/home/ec2-user/unzip_frontend.sh')
+            # sftp.close()
+            # print("<EC2> Desplegando Frontend...")
+            # ssh_client.exec_command('chmod +x *.sh')
+            # ssh_client.exec_command('./unzip_frontend.sh')
+            # print("<EC2> Success deploying Frontend !")
+
+            print("<EC2> Enviando Client...")
             sftp = ssh_client.open_sftp()
-            sftp.put('./frontend.zip', '/home/ec2-user/frontend.zip')
-            sftp.put('./Scripts/deploy_frontend.sh', '/home/ec2-user/deploy_frontend.sh')
-            sftp.put('./Scripts/unzip_frontend.sh', '/home/ec2-user/unzip_frontend.sh')
+            sftp.put('./client.zip', '/home/ec2-user/client.zip')
+            sftp.put('./Scripts/deploy_client.sh', '/home/ec2-user/deploy_client.sh')
+            sftp.put('./Scripts/unzip_client.sh', '/home/ec2-user/unzip_client.sh')
             sftp.close()
-
-            print("<EC2> Desplegando Frontend...")
+            print("<EC2> Desplegando Client...")
             ssh_client.exec_command('chmod +x *.sh')
-            ssh_client.exec_command('./unzip_frontend.sh')
-
-            print("<EC2> Success deploying Frontend !")
+            ssh_client.exec_command('./unzip_client.sh')
+            print("<EC2> Success deploying Client !")
 
         else:
             print("<EC2> Conectando con la instancia ["+instance_dns+"]...")
@@ -150,26 +175,26 @@ def reboot_ec2_instances():
             ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh_client.connect(hostname=instance_dns, username='ec2-user', pkey=key, look_for_keys=False)
 
-            print("<EC2> Enviando Backend ["+index+"]...")
+            print("<EC2> Enviando Backend ["+str(index)+"]...")
             sftp = ssh_client.open_sftp()
             sftp.put('./backend.zip', '/home/ec2-user/backend.zip')
             sftp.put('./Scripts/deploy_backend.sh', '/home/ec2-user/deploy_backend.sh')
             sftp.put('./Scripts/unzip_backend.sh', '/home/ec2-user/unzip_backend.sh')
             sftp.close()
 
-            print("<EC2> Desplegando Backend ["+index+"]...")
+            print("<EC2> Desplegando Backend ["+str(index)+"]...")
             ssh_client.exec_command('chmod +x *.sh')
             ssh_client.exec_command('./unzip_backend.sh')
 
-            print("<EC2> Success deploying Backend ["+index+"] !")
+            print("<EC2> Success deploying Backend ["+str(index)+"] !")
 
     return
 
 # SQS INSTANCES
 def create_SQS_queue():
     print("<SQS> Creando colas SQS Request y Response ...")
-    SQS_CLIENT.create_queue(QueueName=SQS_REQUEST_QUEUE_NAME, Attributes={'VisibilityTimeout':'10', 'FifoQueue': 'true', 'ContentBasedDeduplication': 'true', 'MessageRetentionPeriod': '3600'})
-    SQS_CLIENT.create_queue(QueueName=SQS_RESPONSE_QUEUE_NAME, Attributes={'VisibilityTimeout':'10', 'FifoQueue': 'true', 'ContentBasedDeduplication': 'true', 'MessageRetentionPeriod': '3600'})
+    SQS_CLIENT.create_queue(QueueName=SQS_REQUEST_QUEUE_NAME, Attributes={'VisibilityTimeout':'10', 'FifoQueue': 'true', 'ContentBasedDeduplication': 'false', 'MessageRetentionPeriod': '3600'})
+    SQS_CLIENT.create_queue(QueueName=SQS_RESPONSE_QUEUE_NAME, Attributes={'VisibilityTimeout':'10', 'FifoQueue': 'true', 'ContentBasedDeduplication': 'false', 'MessageRetentionPeriod': '3600'})
     print("<SQS> Colas creadas con éxito!")
     return
 
@@ -181,11 +206,11 @@ def delete_SQS_queue():
     return
 
 # S3 INSTANCES
-# def create_S3_instance():
-#     print("<S3> Creando repositorio S3 de PDFs...")
-#     S3_CLIENT.create_bucket(Bucket=S3_BUCKET_NAME, CreateBucketConfiguration={'LocationConstraint': AWS_REGION_NAME})
-#     print("<S3> Bucket creado con éxito!")
-#     return
+def create_S3_instance():
+    print("<S3> Creando repositorio S3 de PDFs...")
+    S3_CLIENT.create_bucket(Bucket=S3_BUCKET_NAME)
+    print("<S3> Bucket creado con éxito!")
+    return
 
 def delete_S3_instance():
     print("<S3> Eliminando repositorio S3...")
@@ -236,8 +261,7 @@ if __name__ == '__main__':
             print("2) Eliminar una instancia S3")
             response = int(input())
             if response == 1:
-                #create_S3_instance()
-                print(" Opción deshabilitada")
+                create_S3_instance()
             if response == 2:
                 delete_S3_instance()
 
