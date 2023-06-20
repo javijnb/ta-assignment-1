@@ -1,1 +1,30 @@
-<h1>Bienvenido</h1>
+<script>
+    function submitForm() {
+        var form = document.getElementByName('my_form')[0]
+        form.submit()
+        form.reset()
+        return false;
+    }
+</script>
+
+<h1>Bienvenido {{email}}</h1>
+<h2>Eventos disponibles</h2>
+
+{% for event in events %}
+<h3>{{event.event.S}} - Aforo actual: {{event.current_capacity.S}} - Aforo máximo: {{event.max_capacity.S}}</h3>
+{% endfor %}
+
+<form id="my_form" method="POST">
+    <label>Nombre del evento</label><input type="text" name="requested_event">
+    <label>Número de tickets</label><input type="number" name="requested_tickets">
+    <button type="submit" onClick=submitForm()>Comprar</button>
+</form>
+
+<h4>{{response}}</h4>
+
+<h2>Mis tickets</h2>
+<ol>
+    {% for clave in tickets.keys() %}
+    <li><a href="https://pdfs-javijnb.s3.amazonaws.com/{{tickets[clave].StringValue.ticket_url.S}}">{{tickets[clave].StringValue.ticket_url.S}}</a></li>
+    {% endfor %}
+</ol>

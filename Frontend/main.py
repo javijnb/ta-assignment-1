@@ -3,8 +3,9 @@ from flask import render_template
 from dotenv import load_dotenv
 import os
 import boto3
+import uuid
 
-TOKEN = ""
+TOKEN = "app-token"
 
 load_dotenv()
 
@@ -48,14 +49,13 @@ def login():
                         "AttributeValueList":[ {"S": password} ],
                         "ComparisonOperator": "EQ"
                     }})
+            
             if len(exist['Items']) == 0:
                 return render_template('login.html')
             
             else:
                 try:
-                    #print(get_eventos)
                     return redirect(url_for('home', email=email))
-                    #return render_template('home.html', data=get_eventos())
 
                 except Exception as e:
                     print(str(e))
@@ -68,8 +68,76 @@ def login():
 
 @app.route('/home', methods=['GET', 'POST'])
 def home():
-    email = "javijnb@gmail.com"
-    return render_template('home.html', data=get_eventos(), tickets=get_tickets(email))
+    email = request.args.get('email')
+    backend_response = 0
+    
+    if request.method == 'POST':
+        print("1")
+        requested_tickets = request.form.get('requested_tickets')
+        event = request.form.get('requested_event')
+
+        if requested_tickets != '' and event != '':
+            print("2")
+            transaction_id = str(uuid.uuid1())
+            SQS_CLIENT.send_message(QueueUrl=SQS_REQUEST_QUEUE_URL, MessageBody="backend-purchase", MessageGroupId="TA", MessageAttributes={
+                    'email': {
+                        'StringValue': email,
+                        'DataType': 'String'
+                    },
+                    'requested_tickets': {
+                        'StringValue': requested_tickets,
+                        'DataType': 'String'
+                    },
+                    'requested_event': {
+                        'StringValue': event,
+                        'DataType': 'String'
+                    },
+                    'transaction_id': {
+                        'StringValue': transaction_id,
+                        'DataType': 'String'
+                    },
+                    'jwt': {
+                        'StringValue': TOKEN,
+                        'DataType': 'String'
+                    }
+                }, MessageDeduplicationId=transaction_id)
+            
+            backend_response = 0
+            while backend_response == 0:
+                print("3")
+                message_response = SQS_CLIENT.receive_message(QueueUrl=SQS_RESPONSE_QUEUE_URL, MessageAttributeNames=['All'], MaxNumberOfMessages=1,)
+                message_list = list(message_response.keys())[0]
+
+                if message_list == 'Messages':
+                    res_receipt_handle = message_response['Messages'][0]['ReceiptHandle']
+                    response_email = message_response['Messages'][0]['MessageAttributes']['email']['StringValue']
+                    response_transaction_id = message_response['Messages'][0]['MessageAttributes']['transaction_id']['StringValue']
+
+                    if response_email == email and response_transaction_id == transaction_id:
+                            
+                        response_requested_tickets = message_response['Messages'][0]['MessageAttributes']['requested_tickets']['StringValue']
+                        response_requested_event = message_response['Messages'][0]['MessageAttributes']['requested_event']['StringValue']
+                        response_type = message_response['Messages'][0]['Body']
+
+                        SQS_CLIENT.delete_message(QueueUrl=SQS_RESPONSE_QUEUE_URL, ReceiptHandle=res_receipt_handle)
+
+                        if response_type == 'success':
+                            backend_response = 1
+                            response_ticket_url = message_response['Messages'][0]['MessageAttributes']['ticket_url']['StringValue']
+                            response_success = True
+                            print("Exito")
+
+                        elif response_type == 'error':
+                            backend_response = 1
+                            response_success = False
+
+                    else:
+                        SQS_CLIENT.change_message_visibility(QueueUrl=SQS_RESPONSE_QUEUE_URL, ReceiptHandle=res_receipt_handle, VisibilityTimeout=0)
+                        backend_response = 0
+
+            return render_template('home.html', events=get_eventos(), tickets=get_tickets(email), response=response_success)
+
+    return render_template('home.html', events=get_eventos(), tickets=get_tickets(email))
 
 def get_eventos():
     result = DYNAMODB_CLIENT.scan(TableName=EVENTS_TABLE_NAME)['Items']
@@ -84,21 +152,16 @@ def get_tickets(email:str):
         }
     })['Items']
 
-    message = {
-        'email': {
-            'StringValue': email,
-            'DataType': 'String'
-        },  
-    }
+    message = dict()
 
     for index, ticket in enumerate(tickets):
         sub_dict = {}
         sub_dict['StringValue'] = ticket
         sub_dict['DataType'] = 'String'
         message[str(index)] = sub_dict
-        print(str(index) + ") Ticket - " + ticket['ticket_url']['S'])
 
-    return result
+    print(message)
+    return message
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", debug=True)
+    app.run(host="0.0.0.0", debug=True, threaded=True)

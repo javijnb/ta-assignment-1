@@ -1,0 +1,145 @@
+{
+    "0": {
+        "StringValue": {
+            "email": {
+                "S": "javijnb@gmail.com"
+            },
+            "ticket_url": {
+                "S": "42f6b9c8-0ebe-11ee-a881-12ec90622d5d.pdf"
+            }
+        },
+        "DataType": "String"
+    },
+    "1": {
+        "StringValue": {
+            "email": {
+                "S": "javijnb@gmail.com"
+            },
+            "ticket_url": {
+                "S": "50543700-0eee-11ee-8829-474ba559d021.pdf"
+            }
+        },
+        "DataType": "String"
+    },
+    "2": {
+        "StringValue": {
+            "email": {
+                "S": "javijnb@gmail.com"
+            },
+            "ticket_url": {
+                "S": "6192f726-0eef-11ee-8829-474ba559d021.pdf"
+            }
+        },
+        "DataType": "String"
+    },
+    "3": {
+        "StringValue": {
+            "email": {
+                "S": "javijnb@gmail.com"
+            },
+            "ticket_url": {
+                "S": "76bbe700-0eec-11ee-8829-474ba559d021.pdf"
+            }
+        },
+        "DataType": "String"
+    },
+    "4": {
+        "StringValue": {
+            "email": {
+                "S": "javijnb@gmail.com"
+            },
+            "ticket_url": {
+                "S": "7770bdd6-0eee-11ee-8829-474ba559d021.pdf"
+            }
+        },
+        "DataType": "String"
+    },
+    "5": {
+        "StringValue": {
+            "email": {
+                "S": "javijnb@gmail.com"
+            },
+            "ticket_url": {
+                "S": "92f137b2-0eed-11ee-8829-474ba559d021.pdf"
+            }
+        },
+        "DataType": "String"
+    },
+    "6": {
+        "StringValue": {
+            "email": {
+                "S": "javijnb@gmail.com"
+            },
+            "ticket_url": {
+                "S": "a4e14d3a-0eee-11ee-8829-474ba559d021.pdf"
+            }
+        },
+        "DataType": "String"
+    },
+    "7": {
+        "StringValue": {
+            "email": {
+                "S": "javijnb@gmail.com"
+            },
+            "ticket_url": {
+                "S": "a7ebe6f8-0eed-11ee-8829-474ba559d021.pdf"
+            }
+        },
+        "DataType": "String"
+    },
+    "8": {
+        "StringValue": {
+            "email": {
+                "S": "javijnb@gmail.com"
+            },
+            "ticket_url": {
+                "S": "acc51882-0eef-11ee-8829-474ba559d021.pdf"
+            }
+        },
+        "DataType": "String"
+    },
+    "9": {
+        "StringValue": {
+            "email": {
+                "S": "javijnb@gmail.com"
+            },
+            "ticket_url": {
+                "S": "b1dfa07e-0eec-11ee-8829-474ba559d021.pdf"
+            }
+        },
+        "DataType": "String"
+    },
+    "10": {
+        "StringValue": {
+            "email": {
+                "S": "javijnb@gmail.com"
+            },
+            "ticket_url": {
+                "S": "cba3d39a-0eec-11ee-8829-474ba559d021.pdf"
+            }
+        },
+        "DataType": "String"
+    },
+    "11": {
+        "StringValue": {
+            "email": {
+                "S": "javijnb@gmail.com"
+            },
+            "ticket_url": {
+                "S": "db5af56e-0eee-11ee-8829-474ba559d021.pdf"
+            }
+        },
+        "DataType": "String"
+    },
+    "12": {
+        "StringValue": {
+            "email": {
+                "S": "javijnb@gmail.com"
+            },
+            "ticket_url": {
+                "S": "f11d1010-0f45-11ee-8829-474ba559d021.pdf"
+            }
+        },
+        "DataType": "String"
+    }
+}

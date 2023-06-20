@@ -1,1 +1,1 @@
-zip -r frontend.zip ./Frontend requirements.txt
+zip -r frontend.zip ./Frontend requirements.txt .env
