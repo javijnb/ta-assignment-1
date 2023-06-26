@@ -135,9 +135,9 @@ def home():
                         SQS_CLIENT.change_message_visibility(QueueUrl=SQS_RESPONSE_QUEUE_URL, ReceiptHandle=res_receipt_handle, VisibilityTimeout=0)
                         backend_response = 0
 
-            return render_template('home.html', events=get_eventos(), tickets=get_tickets(email), response=response_success)
+            return render_template('home.html', events=get_eventos(), tickets=get_tickets(email), email=email)
 
-    return render_template('home.html', events=get_eventos(), tickets=get_tickets(email))
+    return render_template('home.html', events=get_eventos(), tickets=get_tickets(email), email=email)
 
 def get_eventos():
     result = DYNAMODB_CLIENT.scan(TableName=EVENTS_TABLE_NAME)['Items']
@@ -158,10 +158,23 @@ def get_tickets(email:str):
         sub_dict = {}
         sub_dict['StringValue'] = ticket
         sub_dict['DataType'] = 'String'
+        url = S3_CLIENT.generate_presigned_url('get_object',
+                                                Params={'Bucket': S3_BUCKET_NAME,
+                                                       'Key': ticket['ticket_url']['S']},
+                                                ExpiresIn=3600)
+        sub_dict['potato_o_me_mato'] = url
         message[str(index)] = sub_dict
 
-    print(message)
+    #print(message)
     return message
+
+# <!-- <li><a href="{{ url_for('download', url=tickets[clave].StringValue.ticket_url.S, correo=email) }}">{{tickets[clave].StringValue.ticket_url.S}}</a></li> -->
+# @app.route('/download/<string:url>')
+# def download(url):
+#     correo = request.args.get('correo')
+#     print(correo)
+#     S3_CLIENT.download_file(S3_BUCKET_NAME, url, url)
+#     return render_template('home.html', events=get_eventos(), tickets=get_tickets(correo), email=correo)
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True, threaded=True)

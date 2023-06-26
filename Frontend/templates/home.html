@@ -25,6 +25,6 @@
 <h2>Mis tickets</h2>
 <ol>
     {% for clave in tickets.keys() %}
-    <li><a href="https://pdfs-javijnb.s3.amazonaws.com/{{tickets[clave].StringValue.ticket_url.S}}">{{tickets[clave].StringValue.ticket_url.S}}</a></li>
+    <li><a href="{{tickets[clave].potato_o_me_mato}}">{{tickets[clave].StringValue.ticket_url.S}}</a></li>
     {% endfor %}
 </ol>
